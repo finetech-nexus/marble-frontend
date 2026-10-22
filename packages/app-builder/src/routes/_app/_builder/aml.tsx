@@ -28,6 +28,7 @@ function AmlPage() {
   const request = useServerFn(bankAmlRequestFn);
   const [section, setSection] = useState<(typeof sections)[number]>('screening');
   const [output, setOutput] = useState('Les fonctions AML de cette page sont indépendantes de la licence Marble.');
+  const [matches, setMatches] = useState<Array<Record<string, unknown>>>([]);
   const [form, setForm] = useState({
     name: initial.name ?? '',
     alias: '',
@@ -37,6 +38,7 @@ function AmlPage() {
     country: initial.country ?? '',
     identifiers: '',
     clientRef: initial.clientRef ?? '',
+    reason: '',
   });
 
   useEffect(() => {
@@ -47,6 +49,8 @@ function AmlPage() {
 
   async function call(path: string, method: 'GET' | 'POST', body?: unknown) {
     const result = await request({ data: { path, method, body } });
+    const payload = result.body as { matches?: Array<Record<string, unknown>> } | null;
+    if (payload?.matches) setMatches(payload.matches);
     setOutput(JSON.stringify(result.body, null, 2));
     return result;
   }
@@ -82,6 +86,7 @@ function AmlPage() {
             <input className="border rounded p-2" placeholder="Pays" value={form.country} onChange={(event) => setForm({ ...form, country: event.target.value })} />
             <input className="border rounded p-2" placeholder="Identifiants, séparés par des virgules" value={form.identifiers} onChange={(event) => setForm({ ...form, identifiers: event.target.value })} />
             <input className="border rounded p-2" placeholder="Référence client" value={form.clientRef} onChange={(event) => setForm({ ...form, clientRef: event.target.value })} />
+            <input className="border rounded p-2" placeholder="Motif de qualification" value={form.reason} onChange={(event) => setForm({ ...form, reason: event.target.value })} />
             <select className="border rounded p-2" value={form.entityType} onChange={(event) => setForm({ ...form, entityType: event.target.value })}>
               <option>Person</option>
               <option>Organization</option>
@@ -92,6 +97,40 @@ function AmlPage() {
               <Button type="button" variant="secondary" onClick={() => void call('/searches', 'GET')}>
                 Historique
               </Button>
+            </div>
+            <div className="mt-4 flex flex-col gap-3">
+              {matches.map((match) => (
+                <article key={String(match.id)} className="rounded border p-3">
+                  <div className="font-medium">{String(match.entity_name ?? '')}</div>
+                  <div className="text-sm">
+                    {String(match.entity_type ?? '')} · {String(match.entity_id ?? '')} · score {String(match.score ?? 'n/a')} ·{' '}
+                    {String(match.qualification ?? '')}
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {[
+                      ['to_review', 'À examiner'],
+                      ['in_analysis', 'En cours'],
+                      ['dismissed', 'Écarter'],
+                      ['confirmed', 'Confirmer'],
+                      ['escalate', 'Escalader'],
+                    ].map(([status, label]) => (
+                      <Button
+                        key={status}
+                        type="button"
+                        variant="secondary"
+                        onClick={() =>
+                          void call(`/matches/${String(match.id)}/qualification`, 'POST', {
+                            status,
+                            reason: form.reason,
+                          })
+                        }
+                      >
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
+                </article>
+              ))}
             </div>
           </form>
         ) : null}
