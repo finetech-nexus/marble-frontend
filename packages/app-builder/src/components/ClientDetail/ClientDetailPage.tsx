@@ -150,13 +150,7 @@ export const ClientDetailPage = ({
             />
           </div>
           <div className="flex items-center gap-sm">
-            <Link
-              to="/aml"
-              search={{
-                ...screeningSearchFromClient(objectDetails.data, metadata.caption_field),
-                clientRef: objectId,
-              }}
-            >
+            <Link to="/screening-search" search={screeningSearchFromClient(objectDetails.data, metadata.caption_field)}>
               <Button variant="secondary">{t('client360:client_detail.screen', { defaultValue: 'Screen' })}</Button>
             </Link>
             <Panel.Root>
