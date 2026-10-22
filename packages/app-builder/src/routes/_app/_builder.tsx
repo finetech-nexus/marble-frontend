@@ -209,6 +209,13 @@ function Builder() {
                               Icon={(props) => <Icon icon="case-manager" {...props} />}
                             />
                           </li>
+                          <li>
+                            <SidebarLink
+                              labelTKey="navigation:aml"
+                              to="/aml"
+                              Icon={(props) => <Icon icon="search" {...props} />}
+                            />
+                          </li>
                           {/* Global Search (Screening Search) */}
                           {featuresAccess.isScreeningSearchAvailable ? (
                             <li>

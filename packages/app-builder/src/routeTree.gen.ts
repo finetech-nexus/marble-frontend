@@ -27,6 +27,7 @@ import { Route as AppAuthEmailVerificationRouteImport } from './routes/_app/_aut
 import { Route as AppAuthSignInRouteImport } from './routes/_app/_auth/sign-in'
 import { Route as AppAuthSignInEmailRouteImport } from './routes/_app/_auth/sign-in-email'
 import { Route as AppBuilderAccountRouteImport } from './routes/_app/_builder/account'
+import { Route as AppBuilderAmlRouteImport } from './routes/_app/_builder/aml'
 import { Route as AppBuilderAnalyticsLegacyRouteImport } from './routes/_app/_builder/analytics-legacy'
 import { Route as AppBuilderCasesRouteImport } from './routes/_app/_builder/cases'
 import { Route as AppBuilderContinuousScreeningRouteImport } from './routes/_app/_builder/continuous-screening'
@@ -212,6 +213,11 @@ const AppAuthSignInEmailRoute = AppAuthSignInEmailRouteImport.update({
 const AppBuilderAccountRoute = AppBuilderAccountRouteImport.update({
   id: '/account',
   path: '/account',
+  getParentRoute: () => AppBuilderRoute,
+} as any)
+const AppBuilderAmlRoute = AppBuilderAmlRouteImport.update({
+  id: '/aml',
+  path: '/aml',
   getParentRoute: () => AppBuilderRoute,
 } as any)
 const AppBuilderAnalyticsLegacyRoute =
@@ -817,6 +823,7 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof AppAuthSignInRoute
   '/sign-in-email': typeof AppAuthSignInEmailRoute
   '/account': typeof AppBuilderAccountRoute
+  '/aml': typeof AppBuilderAmlRoute
   '/analytics-legacy': typeof AppBuilderAnalyticsLegacyRoute
   '/cases': typeof AppBuilderCasesRouteWithChildren
   '/continuous-screening': typeof AppBuilderContinuousScreeningRouteWithChildren
@@ -930,6 +937,7 @@ export interface FileRoutesByTo {
   '/sign-in': typeof AppAuthSignInRoute
   '/sign-in-email': typeof AppAuthSignInEmailRoute
   '/account': typeof AppBuilderAccountRoute
+  '/aml': typeof AppBuilderAmlRoute
   '/analytics-legacy': typeof AppBuilderAnalyticsLegacyRoute
   '/ressources/data/export-org': typeof RessourcesDataExportOrgRoute
   '/cases': typeof AppBuilderCasesIndexRoute
@@ -1025,6 +1033,7 @@ export interface FileRoutesById {
   '/_app/_auth/sign-in': typeof AppAuthSignInRoute
   '/_app/_auth/sign-in-email': typeof AppAuthSignInEmailRoute
   '/_app/_builder/account': typeof AppBuilderAccountRoute
+  '/_app/_builder/aml': typeof AppBuilderAmlRoute
   '/_app/_builder/analytics-legacy': typeof AppBuilderAnalyticsLegacyRoute
   '/_app/_builder/cases': typeof AppBuilderCasesRouteWithChildren
   '/_app/_builder/continuous-screening': typeof AppBuilderContinuousScreeningRouteWithChildren
@@ -1142,6 +1151,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-in-email'
     | '/account'
+    | '/aml'
     | '/analytics-legacy'
     | '/cases'
     | '/continuous-screening'
@@ -1255,6 +1265,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-in-email'
     | '/account'
+    | '/aml'
     | '/analytics-legacy'
     | '/ressources/data/export-org'
     | '/cases'
@@ -1349,6 +1360,7 @@ export interface FileRouteTypes {
     | '/_app/_auth/sign-in'
     | '/_app/_auth/sign-in-email'
     | '/_app/_builder/account'
+    | '/_app/_builder/aml'
     | '/_app/_builder/analytics-legacy'
     | '/_app/_builder/cases'
     | '/_app/_builder/continuous-screening'
@@ -1595,6 +1607,13 @@ declare module '@tanstack/react-router' {
       path: '/account'
       fullPath: '/account'
       preLoaderRoute: typeof AppBuilderAccountRouteImport
+      parentRoute: typeof AppBuilderRoute
+    }
+    '/_app/_builder/aml': {
+      id: '/_app/_builder/aml'
+      path: '/aml'
+      fullPath: '/aml'
+      preLoaderRoute: typeof AppBuilderAmlRouteImport
       parentRoute: typeof AppBuilderRoute
     }
     '/_app/_builder/analytics-legacy': {
@@ -2831,6 +2850,7 @@ const AppBuilderUserScoringRouteWithChildren =
 
 interface AppBuilderRouteChildren {
   AppBuilderAccountRoute: typeof AppBuilderAccountRoute
+  AppBuilderAmlRoute: typeof AppBuilderAmlRoute
   AppBuilderAnalyticsLegacyRoute: typeof AppBuilderAnalyticsLegacyRoute
   AppBuilderCasesRoute: typeof AppBuilderCasesRouteWithChildren
   AppBuilderContinuousScreeningRoute: typeof AppBuilderContinuousScreeningRouteWithChildren
@@ -2847,6 +2867,7 @@ interface AppBuilderRouteChildren {
 
 const AppBuilderRouteChildren: AppBuilderRouteChildren = {
   AppBuilderAccountRoute: AppBuilderAccountRoute,
+  AppBuilderAmlRoute: AppBuilderAmlRoute,
   AppBuilderAnalyticsLegacyRoute: AppBuilderAnalyticsLegacyRoute,
   AppBuilderCasesRoute: AppBuilderCasesRouteWithChildren,
   AppBuilderContinuousScreeningRoute:
