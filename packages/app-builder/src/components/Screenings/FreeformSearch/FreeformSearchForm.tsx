@@ -7,7 +7,7 @@ import {
 } from '@app-builder/components/ListAndTopicConfiguration';
 import { ScreeningThreshold } from '@app-builder/components/ScreeningThreshold';
 import { Spinner } from '@app-builder/components/Spinner';
-import { SEARCH_ENTITIES } from '@app-builder/constants/screening-entity';
+import { SEARCH_ENTITIES, type SearchableSchema } from '@app-builder/constants/screening-entity';
 import { type FreeformSearchPreset } from '@app-builder/models/freeform-search-preset';
 import { type ScreeningMatchPayload, type ScreeningProviders } from '@app-builder/models/screening';
 import {
@@ -40,20 +40,33 @@ import {
 } from './freeform-search-preset';
 import { DEFAULT_LIMIT, LimitPopover } from './LimitPopover';
 
+export interface FreeformSearchInitialValues {
+  entityType?: SearchableSchema;
+  fields?: Record<string, string>;
+}
+
 interface FreeformSearchFormProps {
   onSearchComplete: (
     result: { id: string; matches: ScreeningMatchPayload[] },
     searchInputs: FreeformSearchInput,
   ) => void;
   listConfig: ListConfigFilters;
+  initialValues?: FreeformSearchInitialValues;
 }
 
-function useManualSearchForm({ onSubmit }: { onSubmit: (value: FreeformSearchInput) => void | Promise<void> }) {
+function useManualSearchForm({
+  onSubmit,
+  initialValues,
+}: {
+  onSubmit: (value: FreeformSearchInput) => void | Promise<void>;
+  initialValues?: FreeformSearchInitialValues;
+}) {
   const { org } = useOrganizationDetails();
+  const entityType = initialValues?.entityType ?? 'Thing';
   return useForm({
     defaultValues: {
-      entityType: 'Thing',
-      fields: setAdditionalFields(SEARCH_ENTITIES['Thing'].fields, {}),
+      entityType,
+      fields: setAdditionalFields(SEARCH_ENTITIES[entityType].fields, initialValues?.fields ?? {}),
       limit: DEFAULT_LIMIT,
       threshold: org.sanctionThreshold ?? 70,
     } as FreeformSearchInput,
@@ -71,7 +84,7 @@ export function useFormManuallSearch() {
   return form;
 }
 
-export function FreeformSearchForm({ onSearchComplete }: FreeformSearchFormProps) {
+export function FreeformSearchForm({ onSearchComplete, initialValues }: FreeformSearchFormProps) {
   const listConfigQuery = useListConfigQuery('manual_search');
   const { t } = useTranslation('common');
 
@@ -87,7 +100,12 @@ export function FreeformSearchForm({ onSearchComplete }: FreeformSearchFormProps
       </div>
     ))
     .otherwise(({ data }) => (
-      <FreeformSearchFormInner provider={data.provider} listConfig={data.filters} onSearchComplete={onSearchComplete} />
+      <FreeformSearchFormInner
+        provider={data.provider}
+        listConfig={data.filters}
+        onSearchComplete={onSearchComplete}
+        initialValues={initialValues}
+      />
     ));
 }
 
@@ -95,6 +113,7 @@ function FreeformSearchFormInner({
   provider,
   onSearchComplete,
   listConfig,
+  initialValues,
 }: { provider: ScreeningProviders } & FreeformSearchFormProps) {
   const { t } = useTranslation(screeningsI18n);
   const { org, currentUser } = useOrganizationDetails();
@@ -133,6 +152,7 @@ function FreeformSearchFormInner({
   }, [listSharp, selectedDatasetsKey, selectedDatasets, listConfig, provider]);
 
   const form = useManualSearchForm({
+    initialValues,
     onSubmit: async (value) => {
       listSharp.update((state) => {
         applyUniqueLexisNexisSectionDefault(state.datasets, listConfig, provider);

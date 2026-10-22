@@ -5,6 +5,15 @@ import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { useTranslation } from 'react-i18next';
 import { Icon } from 'ui-icons';
+import { z } from 'zod/v4';
+
+export const screeningSearchParams = z.object({
+  name: z.string().optional(),
+  entityType: z.enum(['Thing', 'Person', 'Organization', 'Vehicle']).optional(),
+  birthDate: z.string().optional(),
+  nationality: z.string().optional(),
+  country: z.string().optional(),
+});
 
 const screeningSearchLayoutLoader = createServerFn()
   .middleware([authMiddleware])
@@ -19,6 +28,7 @@ const screeningSearchLayoutLoader = createServerFn()
   });
 
 export const Route = createFileRoute('/_app/_builder/screening-search')({
+  validateSearch: screeningSearchParams,
   loader: () => screeningSearchLayoutLoader(),
   staticData: {
     BreadCrumbs: [

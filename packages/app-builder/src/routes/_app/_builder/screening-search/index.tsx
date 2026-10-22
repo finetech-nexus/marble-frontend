@@ -14,7 +14,7 @@ import { useSaveFreeformSearchMutation } from '@app-builder/queries/screening/fr
 import { normalizeListConfig } from '@app-builder/queries/screening/lists-config';
 import { useOrganizationDetails } from '@app-builder/services/organization/organization-detail';
 import * as Sentry from '@sentry/react';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, getRouteApi } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { type Namespace } from 'i18next';
 import { useCallback, useState } from 'react';
@@ -42,10 +42,18 @@ export const Route = createFileRoute('/_app/_builder/screening-search/')({
   component: ScreeningSearchIndexPage,
 });
 
+const screeningSearchLayout = getRouteApi('/_app/_builder/screening-search');
+
 function ScreeningSearchIndexPage() {
   const { t } = useTranslation(['screenings']);
   const { currentUser } = useOrganizationDetails();
   const { listConfig } = Route.useLoaderData();
+  const { name, entityType, birthDate, nationality, country } = screeningSearchLayout.useSearch();
+  const fields: Record<string, string> = {};
+  if (name) fields.name = name;
+  if (birthDate) fields.birthDate = birthDate;
+  if (nationality) fields.nationality = nationality;
+  if (country) fields.country = country;
   const [searchState, setSearchState] = useState<FreeformSearchState | null>(null);
   const saveSearchMutation = useSaveFreeformSearchMutation();
   const userName = [currentUser.actorIdentity.firstName, currentUser.actorIdentity.lastName].filter(Boolean).join(' ');
@@ -94,7 +102,11 @@ function ScreeningSearchIndexPage() {
             <ViewSavedResults />
           </div>
         </div>
-        <FreeformSearchPage onSearchComplete={handleSearchComplete} listConfig={listConfig.filters} />
+        <FreeformSearchPage
+          onSearchComplete={handleSearchComplete}
+          listConfig={listConfig.filters}
+          initialValues={{ entityType, fields }}
+        />
       </Page.Content>
     </Page.Main>
   );

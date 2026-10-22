@@ -6,6 +6,7 @@ import { DataExplorerPanel } from '@app-builder/components/DataModelExplorer/Dat
 import { DataModelExplorerProvider } from '@app-builder/components/DataModelExplorer/Provider';
 import { Page } from '@app-builder/components/Page';
 import { Spinner } from '@app-builder/components/Spinner';
+import { useBuilderLayoutData } from '@app-builder/hooks/routes-layout-data';
 import { DataModelObject, isAnalyst } from '@app-builder/models';
 import { SCORING_LEVELS_COLORS, SCORING_LEVELS_LABEL_KEYS, type ScoringSettings } from '@app-builder/models/scoring';
 import { useRelatedCasesByObjectQuery } from '@app-builder/queries/cases/related-cases-by-object';
@@ -42,6 +43,32 @@ import { ObjectHierarchy } from './ObjectHierarchy';
 import { ScoreDetailPanel } from './ScoreDetailPanel';
 import { TitleBar } from './TitleBar';
 
+function textField(data: DataModelObject['data'], ...keys: string[]): string {
+  for (const key of keys) {
+    const value = data[key];
+    if (typeof value === 'string' && value.trim()) return value.trim();
+    if (typeof value === 'number') return String(value);
+  }
+  return '';
+}
+
+function screeningSearchFromClient(data: DataModelObject['data'], captionField: string) {
+  const name = textField(data, 'full_name', 'name', 'legal_name', captionField);
+  const birthDate = textField(data, 'birth_date', 'birthDate', 'date_of_birth');
+  const nationality = textField(data, 'nationality');
+  const country = textField(data, 'country', 'country_of_incorporation', 'residence_country');
+  const organization = textField(data, 'legal_name', 'registration_number', 'company_name', 'denomination');
+  const entityType = organization ? 'Organization' : name || birthDate || nationality ? 'Person' : 'Thing';
+
+  return {
+    name: name || undefined,
+    entityType,
+    birthDate: birthDate || undefined,
+    nationality: nationality || undefined,
+    country: country || undefined,
+  } as const;
+}
+
 type ClientDetailPageProps = {
   objectType: string;
   objectId: string;
@@ -67,6 +94,7 @@ export const ClientDetailPage = ({
 }: ClientDetailPageProps) => {
   const { t } = useTranslation(['common', 'client360', 'user-scoring']);
   const { currentUser } = useOrganizationDetails();
+  const canScreen = useBuilderLayoutData().featuresAccess.isScreeningSearchAvailable;
   const canConfigureUserScoring = isAccessible(userScoringAccess) && !isAnalyst(currentUser);
   const dataModel = useDataModel();
   const graphDisplay = getGraphExplorationDisplay(useDataModelFeatureAccess());
@@ -123,14 +151,24 @@ export const ClientDetailPage = ({
               metadata={metadata}
             />
           </div>
-          <Panel.Root>
-            <Panel.Trigger asChild>
-              <Button variant="primary" appearance="stroked">
-                {t('cases:add_to_case.create')}
-              </Button>
-            </Panel.Trigger>
-            <ClientAddToCasePanel objects={[caseObject]} />
-          </Panel.Root>
+          <div className="flex items-center gap-sm">
+            {canScreen ? (
+              <Link
+                to="/screening-search"
+                search={screeningSearchFromClient(objectDetails.data, metadata.caption_field)}
+              >
+                <Button variant="secondary">{t('client360:client_detail.screen', { defaultValue: 'Screen' })}</Button>
+              </Link>
+            ) : null}
+            <Panel.Root>
+              <Panel.Trigger asChild>
+                <Button variant="primary" appearance="stroked">
+                  {t('cases:add_to_case.create')}
+                </Button>
+              </Panel.Trigger>
+              <ClientAddToCasePanel objects={[caseObject]} />
+            </Panel.Root>
+          </div>
         </Page.Header>
         <Page.Container ref={containerRef}>
           <Page.Content width="table">
