@@ -23,12 +23,64 @@ export const Route = createFileRoute('/_app/_builder/aml')({
 
 const sections = ['screening', 'cases', 'batch', 'score', 'settings', 'scenarios', 'audit'] as const;
 
+type MatchView = {
+  id: string;
+  entityName: string;
+  entityType: string;
+  entityId: string;
+  score: string;
+  qualification: string;
+};
+
+function pretty(body: string) {
+  if (!body) return '';
+  try {
+    return JSON.stringify(JSON.parse(body), null, 2);
+  } catch {
+    return body;
+  }
+}
+
+function textField(record: Record<string, unknown>, key: string) {
+  const value = record[key];
+  return value == null ? '' : String(value);
+}
+
+function readMatches(body: string): MatchView[] {
+  if (!body) return [];
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(body);
+  } catch {
+    return [];
+  }
+  if (!parsed || typeof parsed !== 'object') return [];
+  const matches = (parsed as Record<string, unknown>)['matches'];
+  if (!Array.isArray(matches)) return [];
+  return matches.flatMap((item) => {
+    if (!item || typeof item !== 'object') return [];
+    const record = item as Record<string, unknown>;
+    const id = textField(record, 'id');
+    if (!id) return [];
+    return [
+      {
+        id,
+        entityName: textField(record, 'entity_name'),
+        entityType: textField(record, 'entity_type'),
+        entityId: textField(record, 'entity_id'),
+        score: textField(record, 'score') || 'n/a',
+        qualification: textField(record, 'qualification'),
+      },
+    ];
+  });
+}
+
 function AmlPage() {
   const initial = Route.useSearch();
   const request = useServerFn(bankAmlRequestFn);
   const [section, setSection] = useState<(typeof sections)[number]>('screening');
   const [output, setOutput] = useState('Les fonctions AML de cette page sont indépendantes de la licence Marble.');
-  const [matches, setMatches] = useState<Array<Record<string, unknown>>>([]);
+  const [matches, setMatches] = useState<MatchView[]>([]);
   const [form, setForm] = useState({
     name: initial.name ?? '',
     alias: '',
@@ -49,9 +101,9 @@ function AmlPage() {
 
   async function call(path: string, method: 'GET' | 'POST', body?: unknown) {
     const result = await request({ data: { path, method, body } });
-    const payload = result.body as { matches?: Array<Record<string, unknown>> } | null;
-    if (payload?.matches) setMatches(payload.matches);
-    setOutput(JSON.stringify(result.body, null, 2));
+    const found = readMatches(result.body);
+    if (found.length > 0) setMatches(found);
+    setOutput(pretty(result.body) || JSON.stringify({ status: result.status }));
     return result;
   }
 
@@ -144,11 +196,10 @@ function AmlPage() {
             </div>
             <div className="mt-4 flex flex-col gap-3">
               {matches.map((match) => (
-                <article key={String(match.id)} className="rounded border p-3">
-                  <div className="font-medium">{String(match.entity_name ?? '')}</div>
+                <article key={match.id} className="rounded border p-3">
+                  <div className="font-medium">{match.entityName}</div>
                   <div className="text-sm">
-                    {String(match.entity_type ?? '')} · {String(match.entity_id ?? '')} · score{' '}
-                    {String(match.score ?? 'n/a')} · {String(match.qualification ?? '')}
+                    {match.entityType} · {match.entityId} · score {match.score} · {match.qualification}
                   </div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {[
@@ -163,7 +214,7 @@ function AmlPage() {
                         type="button"
                         variant="secondary"
                         onClick={() =>
-                          void call(`/matches/${String(match.id)}/qualification`, 'POST', {
+                          void call(`/matches/${match.id}/qualification`, 'POST', {
                             status,
                             reason: form.reason,
                           })
