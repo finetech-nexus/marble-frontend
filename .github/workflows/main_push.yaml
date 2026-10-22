@@ -20,34 +20,26 @@ jobs:
     needs: check
     permissions:
       contents: read
-      actions: read
-      id-token: write # needed for using open id token to authenticate with GCP
     uses: ./.github/workflows/build_and_deploy.yaml
     with:
-      gcloud-service: marble-frontend
+      image-name: marble-frontend
       dockerfile: ./Dockerfile
       dockerfile-target-stage: app-builder
-      environment: staging
       version: latest
-      SENTRY_RELEASE: ${{ github.sha }}
     secrets:
-      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-      SEGMENT_WRITE_KEY_OPENSOURCE: ${{ secrets.SEGMENT_WRITE_KEY_OPENSOURCE }}
+      DOCKER_USER: ${{ secrets.DOCKER_USER }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
   build_and_deploy_backoffice:
     needs: check
     permissions:
       contents: read
-      actions: read
-      id-token: write # needed for using open id token to authenticate with GCP
     uses: ./.github/workflows/build_and_deploy.yaml
     with:
-      gcloud-service: marble-backoffice
+      image-name: marble-backoffice
       dockerfile: ./Dockerfile.backoffice
       dockerfile-target-stage: backoffice
-      environment: staging
       version: latest
-      SENTRY_RELEASE: ${{ github.sha }}
     secrets:
-      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-      SEGMENT_WRITE_KEY_OPENSOURCE: ${{ secrets.SEGMENT_WRITE_KEY_OPENSOURCE }}
+      DOCKER_USER: ${{ secrets.DOCKER_USER }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
