@@ -265,7 +265,7 @@ export function BankCasesPanel() {
           </article>
         ))
       ) : (
-        <Typo variant="body">Aucun dossier chargé.</Typo>
+        <Typo variant="text">Aucun dossier chargé.</Typo>
       )}
     </div>
   );
