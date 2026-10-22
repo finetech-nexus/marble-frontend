@@ -1,7 +1,7 @@
 import { bankAmlRequestFn } from '@app-builder/server-fns/bank-aml';
 import { useServerFn } from '@tanstack/react-start';
-import { useState } from 'react';
-import { Button, Typo } from 'ui-design-system';
+import { useEffect, useState } from 'react';
+import { Button, Input, Tag, Typo } from 'ui-design-system';
 
 type MatchView = {
   id: string;
@@ -134,139 +134,163 @@ export function BankScreeningPanel({
   });
 
   return (
-    <form
-      className="grid max-w-xl gap-2"
-      onSubmit={(event) => {
-        event.preventDefault();
-        void call('/searches', 'POST', {
-          ...form,
-          identifiers: form.identifiers ? form.identifiers.split(',').map((item) => item.trim()) : [],
-        });
-      }}
-    >
-      <input
-        className="border rounded p-2"
-        placeholder="Nom ou dénomination"
-        value={form.name}
-        onChange={(event) => setForm({ ...form, name: event.target.value })}
-      />
-      <input
-        className="border rounded p-2"
-        placeholder="Alias"
-        value={form.alias}
-        onChange={(event) => setForm({ ...form, alias: event.target.value })}
-      />
-      <input
-        className="border rounded p-2"
-        placeholder="Date de naissance ou de création"
-        value={form.birthDate}
-        onChange={(event) => setForm({ ...form, birthDate: event.target.value })}
-      />
-      <input
-        className="border rounded p-2"
-        placeholder="Nationalité"
-        value={form.nationality}
-        onChange={(event) => setForm({ ...form, nationality: event.target.value })}
-      />
-      <input
-        className="border rounded p-2"
-        placeholder="Pays"
-        value={form.country}
-        onChange={(event) => setForm({ ...form, country: event.target.value })}
-      />
-      <input
-        className="border rounded p-2"
-        placeholder="Identifiants, séparés par des virgules"
-        value={form.identifiers}
-        onChange={(event) => setForm({ ...form, identifiers: event.target.value })}
-      />
-      <input
-        className="border rounded p-2"
-        placeholder="Référence client"
-        value={form.clientRef}
-        onChange={(event) => setForm({ ...form, clientRef: event.target.value })}
-      />
-      <input
-        className="border rounded p-2"
-        placeholder="Motif de qualification"
-        value={form.reason}
-        onChange={(event) => setForm({ ...form, reason: event.target.value })}
-      />
-      <select
-        className="border rounded p-2"
-        value={form.entityType}
-        onChange={(event) => setForm({ ...form, entityType: event.target.value })}
+    <div className="flex h-full flex-col gap-lg lg:flex-row">
+      <form
+        className="bg-surface-card border-grey-border flex w-full shrink-0 flex-col gap-sm overflow-y-auto rounded-lg border p-md lg:w-1/4"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void call('/searches', 'POST', {
+            ...form,
+            identifiers: form.identifiers ? form.identifiers.split(',').map((item) => item.trim()) : [],
+          });
+        }}
       >
-        <option>Person</option>
-        <option>Organization</option>
-        <option>Thing</option>
-      </select>
-      <div className="flex gap-2">
-        <Button type="submit">Rechercher</Button>
-        <Button type="button" variant="secondary" onClick={() => void call('/searches', 'GET')}>
-          Historique
-        </Button>
+        <Input
+          placeholder="Nom ou dénomination"
+          value={form.name}
+          onChange={(event) => setForm({ ...form, name: event.target.value })}
+        />
+        <Input
+          placeholder="Alias"
+          value={form.alias}
+          onChange={(event) => setForm({ ...form, alias: event.target.value })}
+        />
+        <Input
+          placeholder="Date de naissance ou de création"
+          value={form.birthDate}
+          onChange={(event) => setForm({ ...form, birthDate: event.target.value })}
+        />
+        <Input
+          placeholder="Nationalité"
+          value={form.nationality}
+          onChange={(event) => setForm({ ...form, nationality: event.target.value })}
+        />
+        <Input
+          placeholder="Pays"
+          value={form.country}
+          onChange={(event) => setForm({ ...form, country: event.target.value })}
+        />
+        <Input
+          placeholder="Identifiants, séparés par des virgules"
+          value={form.identifiers}
+          onChange={(event) => setForm({ ...form, identifiers: event.target.value })}
+        />
+        <Input
+          placeholder="Référence client"
+          value={form.clientRef}
+          onChange={(event) => setForm({ ...form, clientRef: event.target.value })}
+        />
+        <Input
+          placeholder="Motif de qualification"
+          value={form.reason}
+          onChange={(event) => setForm({ ...form, reason: event.target.value })}
+        />
+        <select
+          className="border-grey-border bg-surface-card rounded-sm border p-2"
+          value={form.entityType}
+          onChange={(event) => setForm({ ...form, entityType: event.target.value })}
+        >
+          <option>Person</option>
+          <option>Organization</option>
+          <option>Thing</option>
+        </select>
+        <div className="flex gap-sm">
+          <Button type="submit">Rechercher</Button>
+          <Button type="button" variant="secondary" onClick={() => void call('/searches', 'GET')}>
+            Historique
+          </Button>
+        </div>
+      </form>
+      <div className="min-h-0 min-w-0 flex-1 overflow-y-auto">
+        <div className="flex flex-col gap-md">
+          {matches.map((match) => (
+            <article key={match.id} className="bg-surface-card border-grey-border rounded-lg border p-md">
+              <div className="flex items-center justify-between gap-sm">
+                <Typo variant="text">{match.entityName}</Typo>
+                <Tag size="small" color="purple">
+                  {match.qualification || 'to_review'}
+                </Tag>
+              </div>
+              <Typo variant="text">
+                {match.entityType} · {match.entityId} · score {match.score}
+              </Typo>
+              <div className="mt-sm flex flex-wrap gap-sm">
+                {[
+                  ['to_review', 'À examiner'],
+                  ['in_analysis', 'En cours'],
+                  ['dismissed', 'Écarter'],
+                  ['confirmed', 'Confirmer'],
+                  ['escalate', 'Escalader'],
+                ].map(([status, label]) => (
+                  <Button
+                    key={status}
+                    type="button"
+                    variant="secondary"
+                    onClick={() =>
+                      void call(`/matches/${match.id}/qualification`, 'POST', {
+                        status,
+                        reason: form.reason,
+                      })
+                    }
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            </article>
+          ))}
+        </div>
+        {output ? (
+          <pre className="bg-surface-card border-grey-border mt-md overflow-auto rounded-lg border p-md text-xs whitespace-pre-wrap">
+            {output}
+          </pre>
+        ) : null}
       </div>
-      <div className="mt-4 flex flex-col gap-3">
-        {matches.map((match) => (
-          <article key={match.id} className="rounded border p-3">
-            <div className="font-medium">{match.entityName}</div>
-            <div className="text-sm">
-              {match.entityType} · {match.entityId} · score {match.score} · {match.qualification}
-            </div>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {[
-                ['to_review', 'À examiner'],
-                ['in_analysis', 'En cours'],
-                ['dismissed', 'Écarter'],
-                ['confirmed', 'Confirmer'],
-                ['escalate', 'Escalader'],
-              ].map(([status, label]) => (
-                <Button
-                  key={status}
-                  type="button"
-                  variant="secondary"
-                  onClick={() =>
-                    void call(`/matches/${match.id}/qualification`, 'POST', {
-                      status,
-                      reason: form.reason,
-                    })
-                  }
-                >
-                  {label}
-                </Button>
-              ))}
-            </div>
-          </article>
-        ))}
-      </div>
-      {output ? (
-        <pre className="mt-4 overflow-auto rounded border p-3 text-xs whitespace-pre-wrap">{output}</pre>
-      ) : null}
-    </form>
+    </div>
   );
 }
 
 export function BankCasesPanel() {
   const { call, cases } = useBankAml();
 
+  useEffect(() => {
+    void call('/cases', 'GET');
+  }, []);
+
   return (
-    <div className="flex flex-col gap-md">
-      <div>
-        <Button onClick={() => void call('/cases', 'GET')}>Charger les dossiers</Button>
-      </div>
-      {cases.length > 0 ? (
-        cases.map((item) => (
-          <article key={item.id} className="rounded border p-3">
-            <div className="font-medium">{item.clientRef}</div>
-            <div className="text-sm">
-              {item.status} · {item.priority} · {item.scenario}
-            </div>
-          </article>
-        ))
-      ) : (
-        <Typo variant="text">Aucun dossier chargé.</Typo>
-      )}
+    <div className="bg-surface-card border-grey-border overflow-auto rounded-lg border">
+      <table className="w-full text-left">
+        <thead>
+          <tr>
+            <th className="p-sm">Client</th>
+            <th className="p-sm">Statut</th>
+            <th className="p-sm">Priorité</th>
+            <th className="p-sm">Scénario</th>
+          </tr>
+        </thead>
+        <tbody>
+          {cases.length === 0 ? (
+            <tr>
+              <td className="p-md" colSpan={4}>
+                <Typo variant="text">Aucun dossier AML.</Typo>
+              </td>
+            </tr>
+          ) : (
+            cases.map((item) => (
+              <tr key={item.id} className="border-grey-border border-t">
+                <td className="p-sm">{item.clientRef}</td>
+                <td className="p-sm">
+                  <Tag size="small" color="purple">
+                    {item.status}
+                  </Tag>
+                </td>
+                <td className="p-sm">{item.priority}</td>
+                <td className="p-sm">{item.scenario}</td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
     </div>
   );
 }

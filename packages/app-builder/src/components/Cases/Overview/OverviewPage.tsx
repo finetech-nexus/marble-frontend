@@ -1,3 +1,4 @@
+import { BankCasesPanel } from '@app-builder/components/Aml/panels';
 import { CasesNavigationTabs } from '@app-builder/components/Cases/Navigation/Tabs';
 import { Page } from '@app-builder/components/Page';
 import { type InboxMetadata } from '@app-builder/models/inbox';
@@ -36,6 +37,7 @@ export const OverviewPage = ({
         <div className="grid grid-cols-[1fr_calc(var(--spacing-xs)*90)] gap-lg">
           <div className="flex flex-col gap-md">
             <CasesNavigationTabs />
+            <BankCasesPanel />
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-md">
               <CaseByDateGraph />
               <CaseByInboxGraph />
