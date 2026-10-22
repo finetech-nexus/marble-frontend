@@ -79,15 +79,59 @@ function AmlPage() {
               });
             }}
           >
-            <input className="border rounded p-2" placeholder="Nom ou dénomination" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
-            <input className="border rounded p-2" placeholder="Alias" value={form.alias} onChange={(event) => setForm({ ...form, alias: event.target.value })} />
-            <input className="border rounded p-2" placeholder="Date de naissance ou de création" value={form.birthDate} onChange={(event) => setForm({ ...form, birthDate: event.target.value })} />
-            <input className="border rounded p-2" placeholder="Nationalité" value={form.nationality} onChange={(event) => setForm({ ...form, nationality: event.target.value })} />
-            <input className="border rounded p-2" placeholder="Pays" value={form.country} onChange={(event) => setForm({ ...form, country: event.target.value })} />
-            <input className="border rounded p-2" placeholder="Identifiants, séparés par des virgules" value={form.identifiers} onChange={(event) => setForm({ ...form, identifiers: event.target.value })} />
-            <input className="border rounded p-2" placeholder="Référence client" value={form.clientRef} onChange={(event) => setForm({ ...form, clientRef: event.target.value })} />
-            <input className="border rounded p-2" placeholder="Motif de qualification" value={form.reason} onChange={(event) => setForm({ ...form, reason: event.target.value })} />
-            <select className="border rounded p-2" value={form.entityType} onChange={(event) => setForm({ ...form, entityType: event.target.value })}>
+            <input
+              className="border rounded p-2"
+              placeholder="Nom ou dénomination"
+              value={form.name}
+              onChange={(event) => setForm({ ...form, name: event.target.value })}
+            />
+            <input
+              className="border rounded p-2"
+              placeholder="Alias"
+              value={form.alias}
+              onChange={(event) => setForm({ ...form, alias: event.target.value })}
+            />
+            <input
+              className="border rounded p-2"
+              placeholder="Date de naissance ou de création"
+              value={form.birthDate}
+              onChange={(event) => setForm({ ...form, birthDate: event.target.value })}
+            />
+            <input
+              className="border rounded p-2"
+              placeholder="Nationalité"
+              value={form.nationality}
+              onChange={(event) => setForm({ ...form, nationality: event.target.value })}
+            />
+            <input
+              className="border rounded p-2"
+              placeholder="Pays"
+              value={form.country}
+              onChange={(event) => setForm({ ...form, country: event.target.value })}
+            />
+            <input
+              className="border rounded p-2"
+              placeholder="Identifiants, séparés par des virgules"
+              value={form.identifiers}
+              onChange={(event) => setForm({ ...form, identifiers: event.target.value })}
+            />
+            <input
+              className="border rounded p-2"
+              placeholder="Référence client"
+              value={form.clientRef}
+              onChange={(event) => setForm({ ...form, clientRef: event.target.value })}
+            />
+            <input
+              className="border rounded p-2"
+              placeholder="Motif de qualification"
+              value={form.reason}
+              onChange={(event) => setForm({ ...form, reason: event.target.value })}
+            />
+            <select
+              className="border rounded p-2"
+              value={form.entityType}
+              onChange={(event) => setForm({ ...form, entityType: event.target.value })}
+            >
               <option>Person</option>
               <option>Organization</option>
               <option>Thing</option>
@@ -103,8 +147,8 @@ function AmlPage() {
                 <article key={String(match.id)} className="rounded border p-3">
                   <div className="font-medium">{String(match.entity_name ?? '')}</div>
                   <div className="text-sm">
-                    {String(match.entity_type ?? '')} · {String(match.entity_id ?? '')} · score {String(match.score ?? 'n/a')} ·{' '}
-                    {String(match.qualification ?? '')}
+                    {String(match.entity_type ?? '')} · {String(match.entity_id ?? '')} · score{' '}
+                    {String(match.score ?? 'n/a')} · {String(match.qualification ?? '')}
                   </div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {[
@@ -134,16 +178,16 @@ function AmlPage() {
             </div>
           </form>
         ) : null}
-        {section === 'cases' ? (
-          <Button onClick={() => void call('/cases', 'GET')}>Charger les dossiers</Button>
-        ) : null}
+        {section === 'cases' ? <Button onClick={() => void call('/cases', 'GET')}>Charger les dossiers</Button> : null}
         {section === 'batch' ? (
           <Button
             onClick={() =>
               void call('/batches', 'POST', {
                 mode: 'initial',
                 chunk_size: 25,
-                clients: form.clientRef ? [{ client_ref: form.clientRef, entity_type: form.entityType, name: form.name }] : [],
+                clients: form.clientRef
+                  ? [{ client_ref: form.clientRef, entity_type: form.entityType, name: form.name }]
+                  : [],
               })
             }
           >
@@ -155,7 +199,11 @@ function AmlPage() {
             onClick={() =>
               void call('/scores', 'POST', {
                 reason: 'manual',
-                client: { client_ref: form.clientRef || form.name, name: form.name, profile: { country: form.country } },
+                client: {
+                  client_ref: form.clientRef || form.name,
+                  name: form.name,
+                  profile: { country: form.country },
+                },
                 matches: [],
               })
             }
@@ -164,7 +212,9 @@ function AmlPage() {
           </Button>
         ) : null}
         {section === 'settings' ? <Button onClick={() => void call('/settings', 'GET')}>Paramètres</Button> : null}
-        {section === 'scenarios' ? <Button onClick={() => void call('/scenarios', 'GET')}>Scénarios UC01–UC12</Button> : null}
+        {section === 'scenarios' ? (
+          <Button onClick={() => void call('/scenarios', 'GET')}>Scénarios UC01–UC12</Button>
+        ) : null}
         {section === 'audit' ? <Button onClick={() => void call('/audit', 'GET')}>Journal</Button> : null}
         <pre className="mt-4 overflow-auto rounded border p-3 text-xs whitespace-pre-wrap">{output}</pre>
       </Page.Content>
