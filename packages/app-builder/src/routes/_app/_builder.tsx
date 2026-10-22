@@ -1,7 +1,6 @@
-import { navigationI18n, OrganizationSwitcher, SidebarLink } from '@app-builder/components';
+import { OrganizationSwitcher, SidebarLink } from '@app-builder/components';
 import { HeaderLogo } from '@app-builder/components/HeaderLogo';
 import { LeftSidebar } from '@app-builder/components/Layout/LeftSidebar';
-import { Nudge } from '@app-builder/components/Nudge';
 import { OrganizationChangeProvider } from '@app-builder/components/OrganizationChange';
 import { UnavailableBanner } from '@app-builder/components/Settings/UnavailableBanner';
 import { VersionUpdateModalContainer } from '@app-builder/components/VersionUpdate';
@@ -22,11 +21,6 @@ import { useSentryIdentification, useSentryReplay } from '@app-builder/services/
 import { getSettingsAccess } from '@app-builder/services/settings-access';
 import { ClientOnly, createFileRoute, Outlet } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { type Namespace } from 'i18next';
-import { type ComponentProps } from 'react';
-import { useTranslation } from 'react-i18next';
-import { match, P } from 'ts-pattern';
-import { cn } from 'ui-design-system';
 import { Icon } from 'ui-icons';
 
 const appBuilderLayoutLoader = createServerFn({ method: 'GET' })
@@ -73,24 +67,10 @@ export const Route = createFileRoute('/_app/_builder')({
   component: Builder,
 });
 
-const i18n: Namespace = ['common', ...navigationI18n];
-
 const TokenRefresher = () => {
   useRefreshToken();
   return null;
 };
-
-const SIDEBAR_NUDGE_CLASS = cn(
-  'absolute top-sm end-sm translate-x-[50%] -translate-y-[50%] rounded-full size-2.5',
-  'group-sidebar-open:static group-sidebar-open:translate-x-0 group-sidebar-open:translate-y-0',
-  'group-sidebar-open:rounded-sm group-sidebar-open:size-6',
-  'transition-all delay-400 group-sidebar-open:delay-200 motion-reduce:delay-0 motion-reduce:duration-0',
-);
-const SIDEBAR_NUDGE_ICON_CLASS = 'size-2.5 group-sidebar-open:size-3';
-
-function SidebarNudge(props: Omit<ComponentProps<typeof Nudge>, 'className' | 'iconClass'>) {
-  return <Nudge {...props} className={SIDEBAR_NUDGE_CLASS} iconClass={SIDEBAR_NUDGE_ICON_CLASS} />;
-}
 
 function Builder() {
   const {
@@ -107,7 +87,6 @@ function Builder() {
   useSegmentIdentification(user);
   useSentryIdentification(user);
   useSentryReplay(sentryReplayEnabled);
-  const { t } = useTranslation(i18n);
 
   return (
     <>
@@ -149,56 +128,22 @@ function Builder() {
                               />
                             </li>
                           )}
-                          {/* User Scoring */}
                           {!isAnalyst(user) && (
                             <li>
-                              {match(featuresAccess.userScoring)
-                                .with(P.union('allowed', 'test'), () => {
-                                  return (
-                                    <SidebarLink
-                                      labelTKey="navigation:user_scoring"
-                                      to="/user-scoring"
-                                      Icon={(props) => <Icon icon="123" {...props} />}
-                                    />
-                                  );
-                                })
-                                .otherwise((value) => {
-                                  return (
-                                    <div className="text-grey-disabled relative flex gap-sm p-sm">
-                                      <Icon icon="123" className="size-6 shrink-0" />
-                                      <span className="text-s line-clamp-1 text-start font-medium opacity-0 transition-opacity group-sidebar-open:opacity-100 delay-400 group-sidebar-open:delay-200">
-                                        {t('navigation:user_scoring')}
-                                      </span>
-                                      <SidebarNudge kind={value} content={t('navigation:user_scoring.nudge')} />
-                                    </div>
-                                  );
-                                })}
+                              <SidebarLink
+                                labelTKey="navigation:user_scoring"
+                                to="/user-scoring"
+                                Icon={(props) => <Icon icon="123" {...props} />}
+                              />
                             </li>
                           )}
-                          {/* Monitoring (Continuous Screening) */}
                           {!isAnalyst(user) && (
                             <li>
-                              {match(featuresAccess.continuousScreening)
-                                .with(P.union('allowed', 'test'), () => {
-                                  return (
-                                    <SidebarLink
-                                      labelTKey="navigation:continuous_screening"
-                                      to="/continuous-screening"
-                                      Icon={(props) => <Icon icon="scan-eye" {...props} />}
-                                    />
-                                  );
-                                })
-                                .otherwise((value) => {
-                                  return (
-                                    <div className="text-grey-disabled relative flex gap-sm p-sm">
-                                      <Icon icon="scan-eye" className="size-6 shrink-0" />
-                                      <span className="text-s line-clamp-1 text-start font-medium opacity-0 transition-opacity group-sidebar-open:opacity-100 delay-400 group-sidebar-open:delay-200">
-                                        {t('navigation:continuous_screening')}
-                                      </span>
-                                      <SidebarNudge kind={value} content={t('navigation:continuous_screening.nudge')} />
-                                    </div>
-                                  );
-                                })}
+                              <SidebarLink
+                                labelTKey="navigation:continuous_screening"
+                                to="/continuous-screening"
+                                Icon={(props) => <Icon icon="scan-eye" {...props} />}
+                              />
                             </li>
                           )}
                           {/* Investigations (Cases) */}
@@ -211,21 +156,11 @@ function Builder() {
                           </li>
                           <li>
                             <SidebarLink
-                              labelTKey="navigation:aml"
-                              to="/aml"
+                              labelTKey="navigation:screening_search"
+                              to="/screening-search"
                               Icon={(props) => <Icon icon="search" {...props} />}
                             />
                           </li>
-                          {/* Global Search (Screening Search) */}
-                          {featuresAccess.isScreeningSearchAvailable ? (
-                            <li>
-                              <SidebarLink
-                                labelTKey="navigation:screening_search"
-                                to="/screening-search"
-                                Icon={(props) => <Icon icon="search" {...props} />}
-                              />
-                            </li>
-                          ) : null}
                           {/* Client detail */}
                           <li>
                             <SidebarLink
