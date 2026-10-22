@@ -25,14 +25,6 @@ export const bankAmlRequestFn = createServerFn({ method: 'POST' })
       },
       body: data.method === 'POST' ? JSON.stringify(data.body ?? {}) : undefined,
     });
-    const text = await response.text();
-    let body: unknown = null;
-    if (text) {
-      try {
-        body = JSON.parse(text);
-      } catch {
-        body = { error: text };
-      }
-    }
+    const body = await response.text();
     return { status: response.status, body };
   });

@@ -49,7 +49,12 @@ function ScreeningSearchIndexPage() {
   const { currentUser } = useOrganizationDetails();
   const { listConfig } = Route.useLoaderData();
   const { name, entityType, birthDate, nationality, country } = screeningSearchLayout.useSearch();
-  const fields: Record<string, string> = {};
+  const fields: {
+    name?: string;
+    birthDate?: string;
+    nationality?: string;
+    country?: string;
+  } = {};
   if (name) fields.name = name;
   if (birthDate) fields.birthDate = birthDate;
   if (nationality) fields.nationality = nationality;
