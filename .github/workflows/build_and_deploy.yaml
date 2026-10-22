@@ -1,52 +1,41 @@
-name: Reusable build and deploy job
+# Build and push a Marble frontend image to Docker Hub.
+# Tags: the requested version and the short commit SHA.
+# Secrets: DOCKER_USER, DOCKER_PASSWORD. Optional var: DOCKER_ORGANIZATION (default nexusbank).
+name: Build and push image
 
 on:
   workflow_call:
     inputs:
-      gcloud-service:
+      image-name:
         type: string
-        description: "Google cloud service to deploy to"
-        required: true
-      environment:
-        type: string
-        description: "Github environment to use"
+        description: Image name on Docker Hub
         required: true
       version:
         type: string
-        description: "version to deploy"
+        description: Tag to publish
         required: true
-      SENTRY_RELEASE:
-        type: string
-        required: true
-        description: "Sentry release name"
       dockerfile:
         type: string
-        description: "Dockerfile to use"
+        description: Dockerfile to use
         required: true
       dockerfile-target-stage:
         type: string
         description: Dockerfile target stage to build
         required: true
     secrets:
-      SENTRY_AUTH_TOKEN:
+      DOCKER_USER:
         required: true
-        description: "Sentry Auth Token"
-      SEGMENT_WRITE_KEY_OPENSOURCE:
-        description: write key for segment (open source deployment). Can be overridden at runtime
+      DOCKER_PASSWORD:
+        required: true
 
 permissions:
   contents: read
-  actions: read
-  id-token: "write" # needed for using open id token to authenticate with GCP
 
 jobs:
-  main:
+  build-push:
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
     env:
-      VERSION: ${{ inputs.version }}
-      IMAGE: europe-west1-docker.pkg.dev/marble-infra/marble/${{ inputs.gcloud-service }}:${{ inputs.version }}
-      SERVICE_ACCOUNT: marble-frontend-cloud-run@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com
+      DOCKER_ORGANIZATION: ${{ vars.DOCKER_ORGANIZATION || 'nexusbank' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -55,53 +44,31 @@ jobs:
           fetch-tags: true
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@v3
 
-      - name: auth github actions to GCP
-        id: auth
-        uses: google-github-actions/auth@v3
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
         with:
-          token_format: access_token
-          project_id: ${{ vars.GCP_PROJECT_ID }}
-          workload_identity_provider: ${{ vars.WORKLOAD_IDENTITY_PROVIDER_ID }}
-          service_account: ${{ vars.SERVICE_ACCOUNT_EMAIL}}
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Login to Google Artifact Registry
-        uses: docker/login-action@v4
-        with:
-          registry: europe-west1-docker.pkg.dev
-          username: oauth2accesstoken
-          password: ${{ steps.auth.outputs.access_token }}
+      - name: Git short SHA
+        id: sha
+        run: echo "short_sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Extract version from tag
         id: version
-        run: echo "MARBLE_VERSION=$(git describe --tags)" >> "$GITHUB_OUTPUT"
+        run: echo "MARBLE_VERSION=$(git describe --tags --always)" >> "$GITHUB_OUTPUT"
 
-      # source: https://github.com/docker/build-push-action
       - name: Build and push
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@v6
         with:
           context: .
-          push: true
-          target: ${{ inputs.dockerfile-target-stage }}
-          tags: ${{ env.IMAGE }}
           file: ${{ inputs.dockerfile }}
+          target: ${{ inputs.dockerfile-target-stage }}
+          push: true
           build-args: |
-            SENTRY_PROJECT=marble-frontend
-            SENTRY_RELEASE=${{ inputs.SENTRY_RELEASE }}
             APP_VERSION=${{ steps.version.outputs.MARBLE_VERSION }}
-            SEGMENT_WRITE_KEY_OPENSOURCE=${{ secrets.SEGMENT_WRITE_KEY_OPENSOURCE }}
-          secrets: |
-            SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
-
-      - name: "Set up Cloud SDK"
-        uses: "google-github-actions/setup-gcloud@v3"
-        with:
-          install_components: beta
-
-      - name: Deploy server
-        run: |
-          gcloud run deploy ${{ inputs.gcloud-service }} \
-            --quiet \
-            --region="europe-west1" \
-            --image="$IMAGE"
+          tags: |
+            ${{ env.DOCKER_ORGANIZATION }}/${{ inputs.image-name }}:${{ inputs.version }}
+            ${{ env.DOCKER_ORGANIZATION }}/${{ inputs.image-name }}:${{ steps.sha.outputs.short_sha }}
