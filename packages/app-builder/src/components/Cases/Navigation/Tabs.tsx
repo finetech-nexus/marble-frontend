@@ -19,6 +19,9 @@ export function CasesNavigationTabs({ actions }: { actions?: React.ReactNode }) 
           <Tabs.Link asChild>
             <Link to="/cases/inboxes">{t('cases:overview.navigation.cases')}</Link>
           </Tabs.Link>
+          <Tabs.Link asChild>
+            <Link to="/aml">{t('navigation:aml')}</Link>
+          </Tabs.Link>
         </Tabs.Nav>
         {actions}
       </div>
