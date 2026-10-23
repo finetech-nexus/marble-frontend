@@ -6,7 +6,7 @@ import { DataExplorerPanel } from '@app-builder/components/DataModelExplorer/Dat
 import { DataModelExplorerProvider } from '@app-builder/components/DataModelExplorer/Provider';
 import { Page } from '@app-builder/components/Page';
 import { Spinner } from '@app-builder/components/Spinner';
-import { DataModelObject, isAnalyst } from '@app-builder/models';
+import { DataModelObject } from '@app-builder/models';
 import { SCORING_LEVELS_COLORS, SCORING_LEVELS_LABEL_KEYS, type ScoringSettings } from '@app-builder/models/scoring';
 import { useRelatedCasesByObjectQuery } from '@app-builder/queries/cases/related-cases-by-object';
 import { useActiveConfigsForObjectQuery } from '@app-builder/queries/continuous-screening/active-configs-for-object';
@@ -51,6 +51,37 @@ function textField(data: DataModelObject['data'], ...keys: string[]): string {
   return '';
 }
 
+function kycStatusLabel(value: string): string {
+  const normalized = value.trim().toLowerCase();
+  if (['valid', 'valide', 'verified', 'approved'].includes(normalized)) return 'valid';
+  return 'invalid';
+}
+
+function ClientRiskCard({ data }: { data: DataModelObject['data'] }) {
+  const { t } = useTranslation(['client360']);
+  const risk = textField(data, 'risk_level') || textField(data, 'risk_score');
+  const status = textField(data, 'kyc_status');
+  const expires = textField(data, 'kyc_expires_at', 'kyc_review_date', 'next_review_date');
+  const kyc = status ? kycStatusLabel(status) : '';
+
+  return (
+    <div className="border-grey-border flex flex-col gap-xs rounded-lg border p-md py-sm w-[220px] self-start shrink-0">
+      <span className="text-small">{t('client360:client_detail.risk_level')}</span>
+      <span className="font-semibold">{risk || t('client360:client_detail.risk_level.unknown')}</span>
+      <span className="text-small">{t('client360:client_detail.kyc_status')}</span>
+      <span className="font-semibold">
+        {kyc === 'valid'
+          ? t('client360:client_detail.kyc_status.valid')
+          : kyc
+            ? t('client360:client_detail.kyc_status.invalid')
+            : t('client360:client_detail.risk_level.unknown')}
+      </span>
+      <span className="text-small">{t('client360:client_detail.kyc_expires')}</span>
+      <span className="font-semibold">{expires ? expires.slice(0, 10) : '—'}</span>
+    </div>
+  );
+}
+
 function screeningSearchFromClient(data: DataModelObject['data'], captionField: string) {
   const name = textField(data, 'full_name', 'name', 'legal_name', captionField);
   const birthDate = textField(data, 'birth_date', 'birthDate', 'date_of_birth');
@@ -93,7 +124,6 @@ export const ClientDetailPage = ({
 }: ClientDetailPageProps) => {
   const { t } = useTranslation(['common', 'client360', 'user-scoring']);
   const { currentUser } = useOrganizationDetails();
-  const canConfigureUserScoring = isAccessible(userScoringAccess) && !isAnalyst(currentUser);
   const dataModel = useDataModel();
   const graphDisplay = getGraphExplorationDisplay(useDataModelFeatureAccess());
   const annotationsQuery = useGetAnnotationsQuery(objectType, objectId, true);
@@ -169,46 +199,22 @@ export const ClientDetailPage = ({
             <div className={cn('grid grid-cols-1 lg:grid-cols-[7fr_5fr]', pageLayoutGutter.gap)}>
               <div className="flex gap-md self-stretch">
                 {/* Score card */}
-                {isAccessible(userScoringAccess) ? (
-                  scoringSettings && activeScore ? (
-                    <button
-                      type="button"
-                      className="flex flex-col gap-sm border rounded-lg p-md py-sm w-[180px] self-start shrink-0 items-start"
-                      style={{ borderColor: scoreColor, backgroundColor: `${scoreColor}20` }}
-                      onClick={handleScoreClick}
-                    >
-                      <span className="text-small">{t('client360:client_detail.risk_level')}</span>
-                      <div className="flex gap-xs items-center">
-                        <div className="size-4 rounded-full" style={{ backgroundColor: scoreColor }} />
-                        <span className="font-semibold">{scoreLabel}</span>
-                        <Icon icon="eye" className="size-4" />
-                      </div>
-                    </button>
-                  ) : canConfigureUserScoring ? (
-                    <div className="border-purple-border bg-purple-background-light flex flex-col items-center gap-sm rounded-lg border p-md py-sm w-[180px] self-start shrink-0 text-center">
-                      <Icon icon="comet" className="size-10 shrink-0" />
-                      <span className="text-xs">{t('client360:client_detail.risk_level')}</span>
-                      <Link
-                        to="/user-scoring"
-                        className="border-purple-primary text-purple-primary text-xs font-medium w-full rounded-lg border py-xs text-center hover:bg-purple-primary/10 transition-colors"
-                      >
-                        {t('client360:client_detail.risk_level.configure')}
-                      </Link>
+                {isAccessible(userScoringAccess) && scoringSettings && activeScore ? (
+                  <button
+                    type="button"
+                    className="flex flex-col gap-sm border rounded-lg p-md py-sm w-[180px] self-start shrink-0 items-start"
+                    style={{ borderColor: scoreColor, backgroundColor: `${scoreColor}20` }}
+                    onClick={handleScoreClick}
+                  >
+                    <span className="text-small">{t('client360:client_detail.risk_level')}</span>
+                    <div className="flex gap-xs items-center">
+                      <div className="size-4 rounded-full" style={{ backgroundColor: scoreColor }} />
+                      <span className="font-semibold">{scoreLabel}</span>
+                      <Icon icon="eye" className="size-4" />
                     </div>
-                  ) : null
+                  </button>
                 ) : (
-                  <div className="border-purple-border bg-purple-background-light flex flex-col items-center gap-sm rounded-lg border p-md py-sm w-[180px] self-start shrink-0 text-center">
-                    <Icon icon="comet" className="size-10 shrink-0" />
-                    <span className="text-xs">{t('client360:client_detail.risk_level')}</span>
-                    <a
-                      href="https://checkmarble.com/upgrade"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="border-purple-primary text-purple-primary text-xs font-medium w-full rounded-lg border py-xs text-center hover:bg-purple-primary/10 transition-colors"
-                    >
-                      {t('client360:client_detail.risk_level.upgrade')}
-                    </a>
-                  </div>
+                  <ClientRiskCard data={objectDetails.data} />
                 )}
                 <div className="grow">
                   {/* Client fields card */}

@@ -139,6 +139,11 @@ export function CaseManagerPageLayout({
                   {t('cases:case_detail.tab.principal')}
                 </Link>
               </Tabs.Link>
+              <Tabs.Link asChild>
+                <Link from="/cases/s/$caseId" to="./aml" preload="render">
+                  {t('cases:manager.tab.aml')}
+                </Link>
+              </Tabs.Link>
               {defaultClientsPivotValue ? (
                 <Tabs.Link asChild>
                   <Link
@@ -185,7 +190,7 @@ export function CaseManagerPageLayout({
                 <ActionButton icon="plus" text={sarActionText} onClick={handleSarAction} />
               )}
               <ActionButton
-                disabled={pivotObjects.length === 0}
+                disabled={pivotObjects.length === 0 && caseDetail.decisionsCount === 0}
                 icon="plus"
                 text={t('cases:manager.actions.enrich_kyc_profile')}
                 onClick={handleKycEnrichAction}
